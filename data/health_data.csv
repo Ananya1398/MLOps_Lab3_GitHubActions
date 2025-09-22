@@ -1,0 +1,21 @@
+bmi,cholesterol,blood_pressure,status
+22.5,180,120,Healthy
+27.8,210,130,At Risk
+31.2,250,145,Diseased
+24.0,190,125,Healthy
+29.5,220,140,At Risk
+34.0,260,155,Diseased
+21.0,175,115,Healthy
+26.0,200,128,At Risk
+32.5,245,150,Diseased
+23.5,185,118,Healthy
+25.0,205,132,At Risk
+30.8,255,148,Diseased
+20.5,170,110,Healthy
+28.2,215,136,At Risk
+33.0,265,160,Diseased
+22.0,182,122,Healthy
+27.0,208,134,At Risk
+31.5,252,147,Diseased
+24.5,192,126,Healthy
+29.0,218,138,At Risk
