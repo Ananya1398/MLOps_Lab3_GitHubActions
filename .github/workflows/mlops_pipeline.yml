@@ -1,0 +1,60 @@
+name: FastAPI Model Training and Testing
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  build-train-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Retrain Model
+      run: |
+        cd src
+        python train.py
+
+    - name: Quick Model Test (inference)
+      run: |
+        cd src
+        python - <<'EOF'
+        import joblib
+        import numpy as np
+        model = joblib.load("../model/health_model.pkl")
+        test_data = np.array([[25.0, 205, 132]])  # sample At Risk
+        print("Prediction:", model.predict(test_data))
+        EOF
+
+    - name: Save trained model artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: health-model
+        path: model/health_model.pkl
+
+    - name: Commit and Push new model (optional)
+      run: |
+        git config user.name "github-actions"
+        git config user.email "github-actions@github.com"
+        git add model/health_model.pkl
+        git commit -m "Auto retrain model"
+        git push
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      continue-on-error: true
