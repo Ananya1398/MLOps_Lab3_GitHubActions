@@ -1,4 +1,4 @@
-name: FastAPI Model Training and Testing
+name: FastAPI Model Training, Evaluation, and Versioning
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *'   # daily retrain at midnight
 
 jobs:
   build-train-test:
@@ -26,34 +26,34 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Generate Timestamp
+      run: echo "TIMESTAMP=$(date '+%Y%m%d_%H%M%S')" >> $GITHUB_ENV
+
     - name: Retrain Model
       run: |
         cd src
         python train.py
+        cp ../model/health_model.pkl ../model/health_model_${{ env.TIMESTAMP }}.pkl
 
-    - name: Quick Model Test (inference)
+    - name: Evaluate Model
       run: |
         cd src
-        python - <<'EOF'
-        import joblib
-        import numpy as np
-        model = joblib.load("../model/health_model.pkl")
-        test_data = np.array([[25.0, 205, 132]])  # sample At Risk
-        print("Prediction:", model.predict(test_data))
-        EOF
+        python evaluate_model.py
 
-    - name: Save trained model artifact
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: health-model
-        path: model/health_model.pkl
+        name: model-and-metrics-${{ env.TIMESTAMP }}
+        path: |
+          model/health_model_${{ env.TIMESTAMP }}.pkl
+          metrics/
 
-    - name: Commit and Push new model (optional)
+    - name: Commit and Push updated model and metrics
       run: |
         git config user.name "github-actions"
         git config user.email "github-actions@github.com"
-        git add model/health_model.pkl || true
-        git diff --cached --quiet || git commit -m "Auto retrain model"
+        git add model/health_model_${{ env.TIMESTAMP }}.pkl metrics/ || true
+        git diff --cached --quiet || git commit -m "Auto retrain model + metrics ${{ env.TIMESTAMP }}"
         git push || true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
